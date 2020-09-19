@@ -43,7 +43,7 @@ void CGXCommunication::WriteValue(GX_TRACE_LEVEL trace, std::string line)
 {
     if (trace > GX_TRACE_LEVEL_WARNING)
     {
-        printf(line.c_str());
+        printf("%s", line.c_str());
     }
     GXHelpers::Write("LogFile.txt", line);
 }
@@ -912,7 +912,7 @@ int CGXCommunication::UpdateFrameCounter()
         {
             m_Parser->GetCiphering()->SetInvocationCounter(1 + d.GetValue().ToInteger());
         }
-        printf("Invocation counter: %d\n", m_Parser->GetCiphering()->GetInvocationCounter());
+        printf("Invocation counter: %ld\n", m_Parser->GetCiphering()->GetInvocationCounter());
         reply.Clear();
         Disconnect();
         m_Parser->SetClientAddress(add);

@@ -155,7 +155,7 @@ int CGXDLMSSNCommandHandler::HandleWriteRequest(
     unsigned char cipheredCommand)
 {
     // Return error if connection is not established.
-    if (xml == NULL && (settings.GetConnected() && DLMS_CONNECTION_STATE_DLMS) == 0)
+    if (xml == NULL && (settings.GetConnected() & DLMS_CONNECTION_STATE_DLMS) == 0)
     {
         server->GenerateConfirmedServiceError(DLMS_CONFIRMED_SERVICE_ERROR_INITIATE_ERROR,
             DLMS_SERVICE_ERROR_SERVICE,
