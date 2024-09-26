@@ -3327,7 +3327,7 @@ int CGXDLMS::GetData(CGXDLMSSettings& settings,
         {
             return ret;
         }
-        if (ret == DLMS_ERROR_CODE_FALSE)
+        if (notify != NULL && ret == DLMS_ERROR_CODE_FALSE)
         {
             if (notify != NULL)
             {
