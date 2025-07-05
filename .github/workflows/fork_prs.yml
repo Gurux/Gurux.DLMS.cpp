@@ -20,7 +20,7 @@ jobs:
       run: |
         sudo apt update
         sudo apt install -y gh git jq
-        gh auth login --with-token <<< "${{ secrets.IMPORT_TOKEN }}"
+        gh auth login --with-token <<< "${{ secrets.PR_TOKEN }}"
 
     - name: Clone and import PRs
       env:
