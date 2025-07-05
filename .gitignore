@@ -231,3 +231,4 @@ GuruxDLMSClientExample/VS/DvlErrLog.txt
 *.exe
 development/VS/.vs/
 GuruxDLMSClientExample/VS/.vs/
+.vscode
