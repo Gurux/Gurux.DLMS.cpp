@@ -1,0 +1,54 @@
+name: Import Issues from Upstream
+
+on:
+  workflow_dispatch: # ручной запуск
+
+jobs:
+  import-issues:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout self
+      uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y jq curl
+
+    - name: Download and recreate issues
+      env:
+        GH_TOKEN: ${{ secrets.IMPORT_TOKEN }}
+        SOURCE_REPO: Gurux/Gurux.DLMS.cpp.git
+        TARGET_REPO: ${{ github.repository }}
+      run: |
+        mkdir issues
+
+        curl -s -H "Authorization: token $GH_TOKEN" \
+          "https://api.github.com/repos/$SOURCE_REPO/issues?state=all&per_page=100" \
+          > issues/source.json
+
+        count=$(jq length issues/source.json)
+        echo "Found $count issues"
+
+        for i in $(seq 0 $((count - 1))); do
+          title=$(jq -r ".[$i].title" issues/source.json)
+          body=$(jq -r ".[$i].body" issues/source.json)
+          labels=$(jq -r ".[$i].labels | map(.name) | join(\", \")" issues/source.json)
+          state=$(jq -r ".[$i].state" issues/source.json)
+          number=$(jq -r ".[$i].number" issues/source.json)
+          user=$(jq -r ".[$i].user.login" issues/source.json)
+
+          echo "Creating issue #$number: $title"
+
+          new_body="**Original issue [$number](https://github.com/$SOURCE_REPO/issues/$number) by @$user**\n\n$body"
+          payload=$(jq -n \
+            --arg title "$title" \
+            --arg body "$new_body" \
+            --argjson labels "$(jq ".[$i].labels | map(.name)" issues/source.json)" \
+            '{title: $title, body: $body, labels: $labels}')
+
+          curl -s -X POST -H "Authorization: token $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/$TARGET_REPO/issues \
+            -d "$payload"
+        done
