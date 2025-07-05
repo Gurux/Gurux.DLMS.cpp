@@ -58,6 +58,12 @@ jobs:
           git fetch $remote_name $head_branch
 
           git checkout -b $new_branch FETCH_HEAD
+
+          # Настройка git push с авторизацией через токен
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${TARGET_REPO}.git
+
           git push origin $new_branch
 
           body_text=$(gh pr view $number -R $SOURCE_REPO --json body -q .body)
