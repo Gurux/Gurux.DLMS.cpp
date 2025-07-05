@@ -1,0 +1,59 @@
+name: Import Open PRs from Upstream
+
+on:
+  workflow_dispatch:
+
+jobs:
+  import-prs:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout self
+      uses: actions/checkout@v3
+
+    - name: Setup git and GitHub CLI
+      run: |
+        sudo apt update
+        sudo apt install -y gh git jq
+        gh auth login --with-token <<< "${{ secrets.IMPORT_TOKEN }}"
+
+    - name: Clone upstream PRs
+      env:
+        GH_TOKEN: ${{ secrets.IMPORT_TOKEN }}
+        SOURCE_REPO: gurux/Gurux.DLMS.cpp
+        TARGET_REPO: ${{ github.repository }}
+      run: |
+        mkdir repo && cd repo
+        git init
+        git remote add origin https://github.com/${TARGET_REPO}.git
+        git remote add upstream https://github.com/${SOURCE_REPO}.git
+        git fetch upstream
+
+        echo "🔍 Получаем список открытых PR"
+        gh pr list -R $SOURCE_REPO --state open --json number,title,headRefName,headRepositoryOwner,url > prs.json
+        COUNT=$(jq length prs.json)
+
+        echo "📦 Найдено $COUNT PR"
+        for i in $(seq 0 $((COUNT - 1))); do
+          number=$(jq -r ".[$i].number" prs.json)
+          title=$(jq -r ".[$i].title" prs.json)
+          head_branch=$(jq -r ".[$i].headRefName" prs.json)
+          head_user=$(jq -r ".[$i].headRepositoryOwner.login" prs.json)
+          original_url=$(jq -r ".[$i].url" prs.json)
+
+          remote_name="pruser$number"
+          new_branch="pr-from-upstream-$number"
+
+          echo "➡️ Импорт PR #$number: $head_user/$head_branch"
+
+          git remote add $remote_name https://github.com/$head_user/Gurux.DLMS.cpp.git || true
+          git fetch $remote_name $head_branch
+
+          git checkout -b $new_branch FETCH_HEAD
+          git push origin $new_branch
+
+          echo "🌿 Создаём PR: $new_branch → master"
+          gh pr create --title "$title (from upstream PR #$number)" \
+                       --body "**Original PR**: [$original_url]($original_url)\n\nImported for further development." \
+                       --head "$new_branch" --base master || echo "⚠️ PR уже существует или ошибка"
+        done
