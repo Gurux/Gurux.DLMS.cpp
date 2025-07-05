@@ -1,7 +1,12 @@
-name: Import Open PRs from Upstream
+name: Import Open PRs from Upstream in Batches
 
 on:
   workflow_dispatch:
+    inputs:
+      batch_size:
+        description: 'Number of PRs to import per run'
+        required: false
+        default: '10'
 
 jobs:
   import-prs:
@@ -17,11 +22,12 @@ jobs:
         sudo apt install -y gh git jq
         gh auth login --with-token <<< "${{ secrets.IMPORT_TOKEN }}"
 
-    - name: Clone upstream PRs
+    - name: Clone and import PRs
       env:
-        GH_TOKEN: ${{ secrets.IMPORT_TOKEN }}
+        GH_TOKEN: ${{ secrets.PR_TOKEN }}
         SOURCE_REPO: gurux/Gurux.DLMS.cpp
         TARGET_REPO: ${{ github.repository }}
+        BATCH_SIZE: ${{ github.event.inputs.batch_size }}
       run: |
         mkdir repo && cd repo
         git init
@@ -29,12 +35,16 @@ jobs:
         git remote add upstream https://github.com/${SOURCE_REPO}.git
         git fetch upstream
 
-        echo "🔍 Получаем список открытых PR"
         gh pr list -R $SOURCE_REPO --state open --json number,title,headRefName,headRepositoryOwner,url > prs.json
         COUNT=$(jq length prs.json)
+        echo "📦 Found $COUNT PRs"
 
-        echo "📦 Найдено $COUNT PR"
-        for i in $(seq 0 $((COUNT - 1))); do
+        START_INDEX=0
+        END_INDEX=$((START_INDEX + BATCH_SIZE - 1))
+
+        for i in $(seq $START_INDEX $END_INDEX); do
+          [ "$i" -ge "$COUNT" ] && break
+
           number=$(jq -r ".[$i].number" prs.json)
           title=$(jq -r ".[$i].title" prs.json)
           head_branch=$(jq -r ".[$i].headRefName" prs.json)
@@ -44,16 +54,29 @@ jobs:
           remote_name="pruser$number"
           new_branch="pr-from-upstream-$number"
 
-          echo "➡️ Импорт PR #$number: $head_user/$head_branch"
-
           git remote add $remote_name https://github.com/$head_user/Gurux.DLMS.cpp.git || true
           git fetch $remote_name $head_branch
 
           git checkout -b $new_branch FETCH_HEAD
           git push origin $new_branch
 
-          echo "🌿 Создаём PR: $new_branch → master"
-          gh pr create --title "$title (from upstream PR #$number)" \
-                       --body "**Original PR**: [$original_url]($original_url)\n\nImported for further development." \
-                       --head "$new_branch" --base master || echo "⚠️ PR уже существует или ошибка"
+          body_text=$(gh pr view $number -R $SOURCE_REPO --json body -q .body)
+          author=$(jq -r ".[$i].headRepositoryOwner.login" prs.json)
+          labels=$(gh pr view $number -R $SOURCE_REPO --json labels -q '[.labels[].name] | join(", ")')
+          milestone=$(gh pr view $number -R $SOURCE_REPO --json milestone -q .milestone.title)
+
+          final_body="**Original PR**: [$original_url]($original_url)\n**Original author**: @$author\n\n---\n\n$body_text"
+
+          gh pr create --title "$title (from upstream PR #$number)"                        --body "$final_body"                        --head "$new_branch" --base master                        || echo "⚠️ PR already exists or error"
+
+          if [ -n "$labels" ]; then
+            IFS=',' read -ra label_array <<< "$labels"
+            for lbl in "${label_array[@]}"; do
+              gh pr edit "$new_branch" --add-label "$lbl" || true
+            done
+          fi
+
+          if [ "$milestone" != "null" ] && [ -n "$milestone" ]; then
+            gh pr edit "$new_branch" --milestone "$milestone" || true
+          fi
         done
