@@ -18,7 +18,7 @@ jobs:
     - name: Download and recreate issues
       env:
         GH_TOKEN: ${{ secrets.IMPORT_TOKEN }}
-        SOURCE_REPO: Gurux/Gurux.DLMS.cpp.git
+        SOURCE_REPO: Gurux/Gurux.DLMS.cpp
         TARGET_REPO: ${{ github.repository }}
       run: |
         mkdir issues
