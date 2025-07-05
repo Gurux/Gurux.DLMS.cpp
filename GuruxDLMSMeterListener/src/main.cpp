@@ -302,7 +302,7 @@ int main(int argc, char* argv[])
             serverAddress = atoi(optarg);
             break;
         case 'n':
-            serverAddress = CGXDLMSClient::GetServerAddress(atoi(optarg));
+            serverAddress = CGXDLMSClient::GetServerAddressFromSerialNumber(atoi(optarg), 1);
             break;
         case '?':
         {
