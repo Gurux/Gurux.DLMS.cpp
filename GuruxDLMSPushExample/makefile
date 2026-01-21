@@ -21,23 +21,26 @@ SOURCES  := $(wildcard $(SRCDIR)/*.cpp)
 INCLUDES := $(wildcard $(SRCDIR)/*.h)
 
 OBJECTS  := $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
-rm       = rm -f
+rm       = rm -rf
+mkdir    = mkdir -p
 
 $(BINDIR)/$(TARGET): $(OBJECTS)
+	@$(mkdir) $(BINDIR)
 	@$(LINKER) $@ $(LFLAGS) $(OBJECTS) -lgurux_dlms_cpp -lpthread
 	@echo "Linking complete!"
 
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.cpp
+	@$(mkdir) $(OBJDIR)
 	@$(CC) $(CFLAGS) -c $< -o $@
 	@echo "Compiled "$<" successfully!"
 
 .PHONEY: clean
 clean:
-	@$(rm) $(OBJECTS)
+	@$(rm) $(OBJDIR)
 	@echo "Cleanup complete!" 
 	@echo $(OBJECTS)
 
 .PHONEY: remove
 remove: clean
-	@$(rm) $(BINDIR)/$(TARGET)
+	@$(rm) $(BINDIR)
 	@echo "Executable removed!"
