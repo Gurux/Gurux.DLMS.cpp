@@ -35,9 +35,13 @@
 #ifndef GXSECURE_H
 #define GXSECURE_H
 
-#include "../include/enums.h"
-#include "../include/GXBytebuffer.h"
-#include "../include/GXDLMSSettings.h"
+#include "enums.h"
+#include "GXBytebuffer.h"
+#include "GXDLMSSettings.h"
+
+#ifdef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+#include "GXCryptoKeyParameter.h"
+#endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
 
 class CGXSecure
 {

@@ -3831,4 +3831,37 @@ typedef enum
     // Certificate version 3.
     DLMS_CERTIFICATE_VERSION_3,
 }DLMS_CERTIFICATE_VERSION;
+
+/**
+ * Crypto key type.
+ */
+typedef enum {
+    /*
+     * ECDSA public or private key is asked.
+     */
+    DLMS_CRYPTO_KEY_TYPE_ECDSA = 0,
+    /*
+     * Block cipher key is asked.
+     */
+    DLMS_CRYPTO_KEY_TYPE_BLOCK_CIPHER = 1,
+    /*
+     * Authentication key is asked.
+     */
+    DLMS_CRYPTO_KEY_TYPE_AUTHENTICATION = 2
+}DLMS_CRYPTO_KEY_TYPE;
+
+
+/**
+ * External Hardware Security Module operation type.
+ */
+typedef enum {
+    /*
+     * GMAC encryption.
+     */
+    DLMS_EHS_OPERATION_GMAC_ENCRYPT = 0,
+    /*
+     * GMAC decryption.
+     */
+    DLMS_EHS_OPERATION_GMAC_DECRYPT = 1,
+}DLMS_EHS_OPERATION;
 #endif //ENUMS_H

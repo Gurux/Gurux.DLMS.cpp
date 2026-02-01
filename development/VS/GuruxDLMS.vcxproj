@@ -157,6 +157,7 @@
     <ClCompile Include="..\src\GXChargeTable.cpp" />
     <ClCompile Include="..\src\GXCommodity.cpp" />
     <ClCompile Include="..\src\GXCreditChargeConfiguration.cpp" />
+    <ClCompile Include="..\src\GXCryptoKeyParameter.cpp" />
     <ClCompile Include="..\src\GXCurrency.cpp" />
     <ClCompile Include="..\src\GXDLMSAccessItem.cpp" />
     <ClCompile Include="..\src\GXDLMSAccount.cpp" />
@@ -330,6 +331,7 @@
     <ClInclude Include="..\include\GXCipher.h" />
     <ClInclude Include="..\include\GXCommodity.h" />
     <ClInclude Include="..\include\GXCreditChargeConfiguration.h" />
+    <ClInclude Include="..\include\GXCryptoKeyParameter.h" />
     <ClInclude Include="..\include\GXCurrency.h" />
     <ClInclude Include="..\include\GXCurve.h" />
     <ClInclude Include="..\include\GXDate.h" />

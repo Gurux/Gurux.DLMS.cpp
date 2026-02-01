@@ -2222,7 +2222,7 @@ int CGXAPDU::GenerateAARE(
         GXHelpers::SetObjectCount(2 + cipher->GetSystemTitle().GetSize(), data);
         data.SetUInt8(BER_TYPE_OCTET_STRING);
         GXHelpers::SetObjectCount(cipher->GetSystemTitle().GetSize(), data);
-        data.Set(&cipher->GetSystemTitle());
+        data.Set(cipher->GetSystemTitle().GetData(), cipher->GetSystemTitle().GetSize());
     }
     //Add CallingAeQualifier.
     if (settings.GetAuthentication() == DLMS_AUTHENTICATION_HIGH_ECDSA &&

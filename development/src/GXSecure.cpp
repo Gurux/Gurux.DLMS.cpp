@@ -230,6 +230,27 @@ int CGXSecure::Secure(
     }
     else if (settings.GetAuthentication() == DLMS_AUTHENTICATION_HIGH_GMAC)
     {
+#ifdef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+        CGXByteBuffer& key = cipher->GetBlockCipherKey();
+        CGXByteBuffer& auth = cipher->GetAuthenticationKey();
+        CGXCryptoKeyParameter args;
+            args.SetOperation(DLMS_EHS_OPERATION_GMAC_ENCRYPT);
+            args.SetSecurity(DLMS_SECURITY_AUTHENTICATION);
+            args.SetSecuritySuite(cipher->GetSecuritySuite());
+            args.GetAuthenticationKey().Set(auth.GetData(), auth.GetSize());
+            args.GetBlockCipherKey().Set(key.GetData(), key.GetSize());
+            args.SetInvocationCounter(ic);
+            args.GetSystemTitle().Set(secret.GetData(), secret.GetSize());
+            args.GetPlainText().Set(data.GetData(), data.GetSize());
+            ret = OnCrypto(args);
+            if (ret == 0)
+            {
+                reply.SetUInt8(DLMS_SECURITY_AUTHENTICATION | cipher->GetSecuritySuite());
+                reply.SetUInt32(ic);
+                // The last 12 bytes are the GMAC.
+                reply.Set(&args.GetEncrypted(), args.GetEncrypted().GetSize() - 12, 12);
+            }
+#else
         CGXByteBuffer& key = cipher->GetBlockCipherKey();
         ret = cipher->Encrypt(
             cipher->GetSecuritySuite(),
@@ -241,6 +262,7 @@ int CGXSecure::Secure(
             reply.SetUInt32(ic);
             reply.Set(&data);
         }
+#endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
     }
     else if (settings.GetAuthentication() == DLMS_AUTHENTICATION_HIGH_ECDSA)
     {

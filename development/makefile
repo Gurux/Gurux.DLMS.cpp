@@ -42,7 +42,7 @@ LINKER   = ar rvs
 # linking flags here
 LFLAGS   =  
 
-# change these to set the proper directories where each files shoould be
+# change these to set the proper directories where each files should be
 
 SRCDIR   = src
 OBJDIR   = obj

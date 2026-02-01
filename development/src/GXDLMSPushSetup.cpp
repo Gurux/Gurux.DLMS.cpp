@@ -541,7 +541,7 @@ int CGXDLMSPushSetup::GetValue(CGXDLMSSettings& settings, CGXDLMSValueEventArg& 
     {
         e.SetByteArray(true);
         if ((ret = buff.SetUInt8(DLMS_DATA_TYPE_ARRAY)) == 0 &&
-            (ret = GXHelpers::SetObjectCount(m_PushProtectionParameters.size(), buff)) == 0)
+            (ret = GXHelpers::SetObjectCount((unsigned long)m_PushProtectionParameters.size(), buff)) == 0)
         {
             for (std::vector<CGXPushProtectionParameters>::iterator it = m_PushProtectionParameters.begin(); it != m_PushProtectionParameters.end(); ++it)
             {

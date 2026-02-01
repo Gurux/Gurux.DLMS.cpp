@@ -78,6 +78,8 @@ CGXCipher::~CGXCipher()
 {
 }
 
+#ifndef     DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+
 /**
 * Get nonse from frame counter and system title.
 *
@@ -103,6 +105,9 @@ static int GetNonse(
     return 0;
 }
 
+#endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+
+#ifndef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
 //Get UInt32.
 #define GETU32(pt) (((unsigned long)(pt)[0] << 24) | \
                     ((unsigned long)(pt)[1] << 16) | \
@@ -539,6 +544,8 @@ void CGXCipher::AesGcmGhash(const unsigned char* H, const unsigned char* aad, in
     GetGHash(H, len_buf, sizeof(len_buf), S);
 }
 
+#endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+
 int CGXCipher::Encrypt(
     DLMS_SECURITY_SUITE suite,
     DLMS_SECURITY security,
@@ -559,16 +566,49 @@ int CGXCipher::Encrypt(
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
 #endif // _DEBUG
     int ret;
+#ifndef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
     uint32_t aes[61] = { 0 };
     unsigned char H[16] = { 0 };
     unsigned char J0[16] = { 0 };
     unsigned char S[16] = { 0 };
-    CGXByteBuffer nonse;
     CGXByteBuffer aad;
+#endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+    CGXByteBuffer nonse;
     if (systemTitle.GetSize() != 8)
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
+#ifdef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+    CGXCryptoKeyParameter args;
+    args.SetOperation(encrypt ? DLMS_EHS_OPERATION_GMAC_ENCRYPT : DLMS_EHS_OPERATION_GMAC_DECRYPT);
+    args.SetSecurity(security);
+    args.SetSecuritySuite(GetSecuritySuite());
+    args.GetAuthenticationKey().Set(GetAuthenticationKey().GetData(), GetAuthenticationKey().GetSize());
+    args.GetBlockCipherKey().Set(GetBlockCipherKey().GetData(), GetBlockCipherKey().GetSize());
+    args.SetInvocationCounter(frameCounter);
+    args.GetSystemTitle().Set(systemTitle.GetData(), systemTitle.GetSize());
+    if (encrypt)
+    {
+        args.GetPlainText().Set(input.GetData() + input.GetPosition(), input.Available());
+    }
+    else
+    {
+        args.GetEncrypted().Set(input.GetData() + input.GetPosition(), input.Available());
+    }
+    ret = OnCrypto(args);
+    if (ret == 0)
+    {
+        input.Clear();
+        if (encrypt)
+        {
+            input.Set(&args.GetEncrypted());
+        }
+        else
+        {
+            input.Set(&args.GetPlainText());
+        }
+    }
+#else
     if ((ret = GetNonse(frameCounter, systemTitle, nonse)) != 0)
     {
         return ret;
@@ -672,6 +712,7 @@ int CGXCipher::Encrypt(
             }
         }
     }
+#endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
     if (encrypt)
     {
         ++m_FrameCounter;
