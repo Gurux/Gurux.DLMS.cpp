@@ -51,6 +51,7 @@ class CGXByteArray
     unsigned char* m_Data;
     unsigned long m_Capacity;
     unsigned long m_Size;
+    int EnsureCapacity(unsigned long required);
 public:
     //Constructor.
     CGXByteArray();

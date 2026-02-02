@@ -25,6 +25,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+#include <limits>
 #include "../include/errorcodes.h"
 #include "../include/GXByteArray.h"
 #include "../include/GXHelpers.h"
@@ -71,24 +72,39 @@ unsigned long CGXByteArray::GetSize()
 
 void CGXByteArray::SetSize(unsigned long value)
 {
-    assert(!(value > m_Capacity));
+    if (value > m_Capacity)
+    {
+        if (EnsureCapacity(value) != 0)
+        {
+            return;
+        }
+    }
     m_Size = value;
 }
 
 int CGXByteArray::IncreaseSize(unsigned long size)
 {
-    if (size > 1)
+    if (size == 0)
     {
-        return -1;
+        return (int)m_Size;
     }
-    m_Size += size;
-    return m_Size;
+    if (size > std::numeric_limits<unsigned long>::max() - m_Size)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    unsigned long required = m_Size + size;
+    int ret = EnsureCapacity(required);
+    if (ret != 0)
+    {
+        return ret;
+    }
+    m_Size = required;
+    return (int)m_Size;
 }
 
 // Allocate new size for the array in bytes.
 int CGXByteArray::Capacity(unsigned long capacity)
 {
-    m_Capacity = capacity;
     if (capacity == 0)
     {
         if (m_Data != NULL)
@@ -97,17 +113,18 @@ int CGXByteArray::Capacity(unsigned long capacity)
             m_Data = NULL;
         }
         m_Size = 0;
+        m_Capacity = 0;
     }
     else
     {
         unsigned char* tmp;
         if (m_Data == NULL)
         {
-            tmp = (unsigned char*)malloc(m_Capacity);
+            tmp = (unsigned char*)malloc(capacity);
         }
         else
         {
-            tmp = (unsigned char*)realloc(m_Data, m_Capacity);
+            tmp = (unsigned char*)realloc(m_Data, capacity);
         }
         //If not enought memory available.
         if (tmp == NULL)
@@ -119,8 +136,35 @@ int CGXByteArray::Capacity(unsigned long capacity)
         {
             m_Size = capacity;
         }
+        m_Capacity = capacity;
     }
     return 0;
+}
+
+int CGXByteArray::EnsureCapacity(unsigned long required)
+{
+    if (required <= m_Capacity)
+    {
+        return 0;
+    }
+    unsigned long newCapacity = m_Capacity;
+    if (newCapacity == 0)
+    {
+        newCapacity = VECTOR_CAPACITY;
+    }
+    if (newCapacity < VECTOR_CAPACITY)
+    {
+        newCapacity = VECTOR_CAPACITY;
+    }
+    while (newCapacity < required)
+    {
+        if (newCapacity > std::numeric_limits<unsigned long>::max() - VECTOR_CAPACITY)
+        {
+            return DLMS_ERROR_CODE_OUTOFMEMORY;
+        }
+        newCapacity += VECTOR_CAPACITY;
+    }
+    return Capacity(newCapacity);
 }
 
 unsigned long CGXByteArray::Capacity()
@@ -131,13 +175,22 @@ unsigned long CGXByteArray::Capacity()
 // Fill buffer it with zeros.
 void CGXByteArray::Zero(unsigned long index, unsigned long count)
 {
-    if (index + count > m_Capacity)
+    if (count == 0)
     {
-        CGXByteArray::Capacity(index + count);
+        return;
     }
-    if (m_Size < index + count)
+    if (count > std::numeric_limits<unsigned long>::max() - index)
     {
-        m_Size = index + count;
+        return;
+    }
+    unsigned long required = index + count;
+    if (EnsureCapacity(required) != 0)
+    {
+        return;
+    }
+    if (m_Size < required)
+    {
+        m_Size = required;
     }
     memset(m_Data + index, 0, count);
 }
@@ -145,101 +198,94 @@ void CGXByteArray::Zero(unsigned long index, unsigned long count)
 // Push new data to the byteArray.
 int CGXByteArray::SetUInt8(unsigned char item)
 {
-    int ret = SetUInt8(m_Size, item);
-    if (ret == 0)
-    {
-        ++m_Size;
-    }
-    return ret;
+    return SetUInt8(m_Size, item);
 }
 
 int CGXByteArray::SetUInt8(unsigned long index, unsigned char item)
 {
-    if (m_Capacity == 0 || index + 1 > m_Capacity)
+    if (index > std::numeric_limits<unsigned long>::max() - 1)
     {
-        m_Capacity += VECTOR_CAPACITY;
-        unsigned char* tmp = (unsigned char*)realloc(m_Data, m_Capacity);
-        //If not enought memory available.
-        if (tmp == NULL)
-        {
-            return DLMS_ERROR_CODE_OUTOFMEMORY;
-        }
-        m_Data = tmp;
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    unsigned long required = index + 1;
+    int ret = EnsureCapacity(required);
+    if (ret != 0)
+    {
+        return ret;
     }
     m_Data[index] = item;
+    if (m_Size < required)
+    {
+        m_Size = required;
+    }
     return 0;
 }
 
 int CGXByteArray::SetUInt16(unsigned short item)
 {
-    int ret = SetUInt16(m_Size, item);
-    if (ret == 0)
-    {
-        m_Size += 2;
-    }
-    return ret;
+    return SetUInt16(m_Size, item);
 }
 
 int CGXByteArray::SetUInt16(unsigned long index, unsigned short item)
 {
-    if (m_Capacity == 0 || index + 2 > m_Capacity)
+    if (index > std::numeric_limits<unsigned long>::max() - 2)
     {
-        m_Capacity += VECTOR_CAPACITY;
-        unsigned char* tmp = (unsigned char*)realloc(m_Data, m_Capacity);
-        //If not enought memory available.
-        if (tmp == NULL)
-        {
-            return DLMS_ERROR_CODE_OUTOFMEMORY;
-        }
-        m_Data = tmp;
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    unsigned long required = index + 2;
+    int ret = EnsureCapacity(required);
+    if (ret != 0)
+    {
+        return ret;
     }
     m_Data[index] = (item >> 8) & 0xFF;
     m_Data[index + 1] = item & 0xFF;
+    if (m_Size < required)
+    {
+        m_Size = required;
+    }
     return 0;
 }
 
 int CGXByteArray::SetUInt32(unsigned long item)
 {
-    int ret = CGXByteArray::SetUInt32ByIndex(m_Size, item);
-    if (ret == 0)
-    {
-        m_Size += 4;
-    }
-    return ret;
+    return CGXByteArray::SetUInt32ByIndex(m_Size, item);
 }
 
 int CGXByteArray::SetUInt32ByIndex(unsigned long index, unsigned long item)
 {
-    if (m_Capacity == 0 || index + 4 > m_Capacity)
+    if (index > std::numeric_limits<unsigned long>::max() - 4)
     {
-        m_Capacity += VECTOR_CAPACITY;
-        unsigned char* tmp = (unsigned char*)realloc(m_Data, m_Capacity);
-        //If not enought memory available.
-        if (tmp == NULL)
-        {
-            return DLMS_ERROR_CODE_OUTOFMEMORY;
-        }
-        m_Data = tmp;
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    unsigned long required = index + 4;
+    int ret = EnsureCapacity(required);
+    if (ret != 0)
+    {
+        return ret;
     }
     m_Data[index] = (item >> 24) & 0xFF;
     m_Data[index + 1] = (item >> 16) & 0xFF;
     m_Data[index + 2] = (item >> 8) & 0xFF;
     m_Data[index + 3] = item & 0xFF;
+    if (m_Size < required)
+    {
+        m_Size = required;
+    }
     return 0;
 }
 
 int CGXByteArray::SetUInt64(unsigned long long item)
 {
-    if (m_Capacity == 0 || m_Size + 8 > m_Capacity)
+    if (8 > std::numeric_limits<unsigned long>::max() - m_Size)
     {
-        m_Capacity += VECTOR_CAPACITY;
-        unsigned char* tmp = (unsigned char*)realloc(m_Data, m_Capacity);
-        //If not enought memory available.
-        if (tmp == NULL)
-        {
-            return DLMS_ERROR_CODE_OUTOFMEMORY;
-        }
-        m_Data = tmp;
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    unsigned long required = m_Size + 8;
+    int ret = EnsureCapacity(required);
+    if (ret != 0)
+    {
+        return ret;
     }
     m_Data[m_Size] = (unsigned char)((item >> 56) & 0xFF);
     m_Data[m_Size + 1] = (item >> 48) & 0xFF;
@@ -249,7 +295,7 @@ int CGXByteArray::SetUInt64(unsigned long long item)
     m_Data[m_Size + 5] = (item >> 16) & 0xFF;
     m_Data[m_Size + 6] = (item >> 8) & 0xFF;
     m_Data[m_Size + 7] = item & 0xFF;
-    m_Size += 8;
+    m_Size = required;
     return 0;
 }
 
@@ -263,22 +309,21 @@ int CGXByteArray::SetFloat(float value)
 
     HELPER tmp;
     tmp.value = value;
-    if (m_Capacity == 0 || m_Size + 4 > m_Capacity)
+    if (4 > std::numeric_limits<unsigned long>::max() - m_Size)
     {
-        m_Capacity += VECTOR_CAPACITY;
-        unsigned char* tmp = (unsigned char*)realloc(m_Data, m_Capacity);
-        //If not enought memory available.
-        if (tmp == NULL)
-        {
-            return DLMS_ERROR_CODE_OUTOFMEMORY;
-        }
-        m_Data = tmp;
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    unsigned long required = m_Size + 4;
+    int ret = EnsureCapacity(required);
+    if (ret != 0)
+    {
+        return ret;
     }
     m_Data[m_Size] = tmp.b[3];
     m_Data[m_Size + 1] = tmp.b[2];
     m_Data[m_Size + 2] = tmp.b[1];
     m_Data[m_Size + 3] = tmp.b[0];
-    m_Size += 4;
+    m_Size = required;
     return 0;
 }
 
@@ -292,16 +337,15 @@ int CGXByteArray::SetDouble(double value)
 
     HELPER tmp;
     tmp.value = value;
-    if (m_Capacity == 0 || m_Size + 8 > m_Capacity)
+    if (8 > std::numeric_limits<unsigned long>::max() - m_Size)
     {
-        m_Capacity += VECTOR_CAPACITY;
-        unsigned char* tmp = (unsigned char*)realloc(m_Data, m_Capacity);
-        //If not enought memory available.
-        if (tmp == NULL)
-        {
-            return DLMS_ERROR_CODE_OUTOFMEMORY;
-        }
-        m_Data = tmp;
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    unsigned long required = m_Size + 8;
+    int ret = EnsureCapacity(required);
+    if (ret != 0)
+    {
+        return ret;
     }
     m_Data[m_Size] = tmp.b[7];
     m_Data[m_Size + 1] = tmp.b[6];
@@ -311,7 +355,7 @@ int CGXByteArray::SetDouble(double value)
     m_Data[m_Size + 5] = tmp.b[2];
     m_Data[m_Size + 6] = tmp.b[1];
     m_Data[m_Size + 7] = tmp.b[0];
-    m_Size += 8;
+    m_Size = required;
     return 0;
 }
 
@@ -339,27 +383,18 @@ int CGXByteArray::Set(const void* pSource, unsigned long count)
 {
     if (pSource != NULL && count != 0)
     {
-        if (m_Size + count > m_Capacity)
+        if (count > std::numeric_limits<unsigned long>::max() - m_Size)
         {
-            //First time data is reserved only for the added data.
-            if (m_Capacity == 0)
-            {
-                m_Capacity = count;
-            }
-            else
-            {
-                m_Capacity += count + VECTOR_CAPACITY;
-            }
-            unsigned char* tmp = (unsigned char*)realloc(m_Data, m_Capacity);
-            //If not enought memory available.
-            if (tmp == NULL)
-            {
-                return DLMS_ERROR_CODE_OUTOFMEMORY;
-            }
-            m_Data = tmp;
+            return DLMS_ERROR_CODE_OUTOFMEMORY;
+        }
+        unsigned long required = m_Size + count;
+        int ret = EnsureCapacity(required);
+        if (ret != 0)
+        {
+            return ret;
         }
         memcpy(m_Data + m_Size, pSource, count);
-        m_Size += count;
+        m_Size = required;
     }
     return 0;
 }
@@ -380,6 +415,7 @@ int CGXByteArray::Set(
         {
             data->m_Position += count;
         }
+        return ret;
     }
     return 0;
 }
@@ -598,9 +634,19 @@ void CGXByteArray::ToArray(unsigned char*& value, unsigned long& count)
     if (value != NULL)
     {
         free(value);
+        value = NULL;
     }
     count = m_Size;
+    if (count == 0)
+    {
+        return;
+    }
     value = (unsigned char*)malloc(count);
+    if (value == NULL)
+    {
+        count = 0;
+        return;
+    }
     memcpy(value, m_Data, count);
 }
 
@@ -706,9 +752,9 @@ int CGXByteArray::GetStringUnicode(
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
-    if (m_Size != 0)
+    if (count != 0)
     {
-        value.append(reinterpret_cast<char const*>(m_Data + index), m_Size);
+        value.append(reinterpret_cast<char const*>(m_Data + index), count);
     }
     return 0;
 }
@@ -722,9 +768,13 @@ int CGXByteArray::GetStringUnicode(
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
-    if (m_Size != 0)
+    if (count != 0)
     {
-        value.append(reinterpret_cast<wchar_t const*>(m_Data + index), m_Size);
+        if (count % sizeof(wchar_t) != 0)
+        {
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+        value.append(reinterpret_cast<wchar_t const*>(m_Data + index), count / sizeof(wchar_t));
     }
     return 0;
 }
@@ -778,12 +828,7 @@ int CGXByteArray::FromBase64(std::string input)
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
-    size_t len = (input.length() * 3) / 4;
     size_t pos = input.find('=', 0);
-    if (pos > 0)
-    {
-        len -= input.length() - pos;
-    }
     std::string inChars;
     int b[4];
     for (pos = 0; pos != input.length(); pos += 4)
