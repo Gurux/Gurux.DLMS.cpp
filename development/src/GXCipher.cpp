@@ -608,6 +608,10 @@ int CGXCipher::Encrypt(
             input.Set(&args.GetPlainText());
         }
     }
+    else
+    {
+        return ret;
+    }
 #else
     if ((ret = GetNonse(frameCounter, systemTitle, nonse)) != 0)
     {

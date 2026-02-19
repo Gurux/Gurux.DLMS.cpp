@@ -101,7 +101,7 @@ void GetUtcOffset(struct tm* timeptr, int& hours, int& minutes, int& deviation)
     }
 }
 
-static time_t GetUtcTime(struct tm* timeptr)
+static time_t UtcTimeToLocalTime(struct tm* timeptr)
 {
     /* gets the epoch time relative to the local time zone,
     and then adds the appropriate number of seconds to make it UTC */
@@ -1319,7 +1319,7 @@ int CGXDateTime::ToLocalTime(struct tm& localTime)
         {
             localTime.tm_min -= m_Deviation;
         }
-        time_t t = GetUtcTime(&localTime);
+        time_t t = UtcTimeToLocalTime(&localTime);
         if (t == -1)
         {
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
@@ -1434,15 +1434,7 @@ long CGXDateTime::GetDifference(struct tm& start, CGXDateTime& to)
 
 unsigned long CGXDateTime::ToUnixTime()
 {
-    unsigned long value = (unsigned long)mktime(&m_Value);
-    if (!m_UseUtc2NormalTime)
-    {
-        if (m_Deviation != (short)0x8000)
-        {
-            value -= m_Deviation;
-        }
-    }
-    return value;
+    return mktime(&m_Value);
 }
 
 bool CGXDateTime::GetUseUtc2NormalTime()

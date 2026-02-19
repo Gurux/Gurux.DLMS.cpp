@@ -283,7 +283,6 @@ int CGXDLMSObjectCollection::Load(const char* fileName)
                     {
                         break;
                     }
-                    obj = NULL;
                 }
             }
             else if (target == "Description")
