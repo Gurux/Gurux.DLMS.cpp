@@ -243,7 +243,7 @@ int CGXDLMSRegister::GetValue(CGXDLMSSettings& settings, CGXDLMSValueEventArg& e
             {
                 return ret;
             }
-            tmp = m_Value.dblVal / GetScaler();
+            tmp = m_Value.dblVal * GetScaler();
             if ((ret = tmp.ChangeType(dt)) != 0)
             {
                 return ret;
@@ -278,8 +278,7 @@ int CGXDLMSRegister::SetValue(CGXDLMSSettings& settings, CGXDLMSValueEventArg& e
     {
         if (m_Scaler != 0 && e.GetValue().IsNumber())
         {
-            double val = GetScaler();
-            val *= e.GetValue().ToDouble();
+            double val = e.GetValue().ToDouble() / GetScaler();
             CGXDLMSVariant tmp(val);
             SetValue(tmp);
         }
