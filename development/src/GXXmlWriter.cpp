@@ -252,7 +252,7 @@ int CGXXmlWriter::Write(const char* data)
 int CGXXmlWriter::WriteStartDocument()
 {
     m_Elements.clear();
-    const char* str = "<?xml version=\"1.0\">";
+    const char* str = "<?xml version=\"1.0\" ?>";
     fprintf(m_f, "%s%s", str, NEW_LINE);
     return 0;
 }
