@@ -153,6 +153,7 @@ int CGXXmlReader::ReadElementContentAsInt(const char* name)
 int CGXXmlReader::ReadElementContentAsInt(const char* name, int defaultValue)
 {
     GetNext();
+    m_Value.clear();
     if (m_Name == name)
     {
         std::string str = GetText();
