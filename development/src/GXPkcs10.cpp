@@ -90,6 +90,7 @@ int CGXPkcs10::GetData(
     }
     else
     {
+        delete subjectPKInfo;
         delete tmp;
         delete attributes;
         delete list;

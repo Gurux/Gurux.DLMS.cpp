@@ -467,26 +467,19 @@ int CGXDLMSClient::ParseLNObjectItem(
         CGXDLMSObject* pObj = CGXDLMSObjectFactory::CreateObject((DLMS_OBJECT_TYPE)classID);
         if (pObj != NULL)
         {
-            if (value.vt != DLMS_DATA_TYPE_STRUCTURE || value.Arr.size() != 4)
+            if (value.vt != DLMS_DATA_TYPE_STRUCTURE || value.Arr.size() != 4 ||
+                value.Arr[0].vt != DLMS_DATA_TYPE_UINT16 ||
+                value.Arr[1].vt != DLMS_DATA_TYPE_UINT8 ||
+                value.Arr[2].vt != DLMS_DATA_TYPE_OCTET_STRING)
             {
-                return DLMS_ERROR_CODE_INVALID_PARAMETER;
-            }
-            if (value.Arr[0].vt != DLMS_DATA_TYPE_UINT16)
-            {
-                return DLMS_ERROR_CODE_INVALID_PARAMETER;
-            }
-            if (value.Arr[1].vt != DLMS_DATA_TYPE_UINT8)
-            {
+                delete pObj;
                 return DLMS_ERROR_CODE_INVALID_PARAMETER;
             }
             unsigned char version = value.Arr[1].ToInteger();
-            if (value.Arr[2].vt != DLMS_DATA_TYPE_OCTET_STRING)
-            {
-                return DLMS_ERROR_CODE_INVALID_PARAMETER;
-            }
             CGXDLMSVariant ln = value.Arr[2];
             if ((ret = CGXDLMSObject::SetLogicalName(pObj, ln)) != 0)
             {
+                delete pObj;
                 return ret;
             }
             std::string ln2;
@@ -499,6 +492,7 @@ int CGXDLMSClient::ParseLNObjectItem(
             //Get Access rights...
             if (value.Arr[3].vt != DLMS_DATA_TYPE_STRUCTURE || value.Arr[3].Arr.size() != 2)
             {
+                delete pObj;
                 return DLMS_ERROR_CODE_INVALID_PARAMETER;
             }
             pObj->SetVersion(version);
