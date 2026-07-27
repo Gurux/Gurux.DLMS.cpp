@@ -2876,7 +2876,11 @@ int CGXDLMS::HandleGloDedRequest(CGXDLMSSettings& settings,
             //If pre-set connection is made.
             else if (settings.GetSourceSystemTitle().GetSize() == 0)
             {
-
+                if ((ret = settings.GetCipher()->Decrypt(settings.GetPreEstablishedSystemTitle(),
+                    settings.GetCipher()->GetBlockCipherKey(), data.GetData(), security, suite, InvocationCounter)) != 0)
+                {
+                    return ret;
+                }
             }
             else
             {

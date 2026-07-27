@@ -55,7 +55,8 @@
 #include "../include/GXDLMSServer.h"
 
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
-CGXDLMSProfileGeneric::~CGXDLMSProfileGeneric()
+
+void CGXDLMSProfileGeneric::ClearCaptureObjects()
 {
     for (std::vector<std::pair<CGXDLMSObject*, CGXDLMSCaptureObject*> >::iterator it = m_CaptureObjects.begin();
         it != m_CaptureObjects.end(); ++it)
@@ -63,6 +64,11 @@ CGXDLMSProfileGeneric::~CGXDLMSProfileGeneric()
         delete it->second;
     }
     m_CaptureObjects.clear();
+}
+
+CGXDLMSProfileGeneric::~CGXDLMSProfileGeneric()
+{
+    ClearCaptureObjects();
     m_Buffer.clear();
 }
 
@@ -915,7 +921,7 @@ int CGXDLMSProfileGeneric::SetValue(CGXDLMSSettings& settings, CGXDLMSValueEvent
                                 row->Arr[pos] = lastDate;
                             }
                         }
-                        else if (row->Arr[pos].vt == DLMS_DATA_TYPE_UINT32 && 
+                        else if (row->Arr[pos].vt == DLMS_DATA_TYPE_UINT32 &&
                             item.first->GetObjectType() == DLMS_OBJECT_TYPE_DATA && item.first->GetObjectType() == 2 &&
                             memcmp(item.first->m_LN, UNIX_TIME, 6) == 0)
                         {
@@ -951,7 +957,7 @@ int CGXDLMSProfileGeneric::SetValue(CGXDLMSSettings& settings, CGXDLMSValueEvent
     }
     else if (e.GetIndex() == 3)
     {
-        m_CaptureObjects.clear();
+        ClearCaptureObjects();
         m_Buffer.clear();
         m_EntriesInUse = 0;
         if (e.GetValue().vt == DLMS_DATA_TYPE_ARRAY)

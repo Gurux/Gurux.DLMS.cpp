@@ -118,6 +118,11 @@ private:
         std::vector<std::pair<CGXDLMSObject*, CGXDLMSCaptureObject*> >& columns);
 public:
     /*
+     * Clears all capture objects.
+     */
+    void ClearCaptureObjects();
+
+    /*
      * Add new capture object (column) to the profile generic.
      */
     int AddCaptureObject(
