@@ -105,3 +105,14 @@ int CGXDLMSSecureServer::SetKek(CGXByteBuffer& value) {
     GetSettings().SetKek(value);
     return 0;
 }
+
+
+CGXByteBuffer& CGXDLMSSecureServer::GetPreEstablishedSystemTitle()
+{
+    return GetSettings().GetPreEstablishedSystemTitle();
+}
+
+int CGXDLMSSecureServer::SetPreEstablishedSystemTitle(CGXByteBuffer& value)
+{
+    return GetSettings().SetPreEstablishedSystemTitle(value);
+}

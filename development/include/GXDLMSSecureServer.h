@@ -117,5 +117,10 @@ public:
     // value: Key Encrypting Key, also known as Master key.
     /////////////////////////////////////////////////////////////////////////////
     int SetKek(CGXByteBuffer& value);
+
+
+    CGXByteBuffer& GetPreEstablishedSystemTitle();
+
+    int SetPreEstablishedSystemTitle(CGXByteBuffer& value);
 };
 #endif //GXDLMSSECURESERVER_H
