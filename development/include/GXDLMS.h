@@ -56,8 +56,8 @@ private:
         CGXDLMSSNParameters& p,
         CGXByteBuffer& reply);
 
-    static unsigned short CountFCS16(CGXByteBuffer& buff, int index, int count);
-    static uint32_t CountFCS24(unsigned char* buff, int index, int count);
+    static unsigned short CountFCS16(CGXByteBuffer& buff, unsigned long index, unsigned long count);
+    static uint32_t CountFCS24(unsigned char* buff, unsigned long index, unsigned long count);
 
     /////////////////////////////////////////////////////////////////////////////
     // Get adress as GXDLMSVariant.
@@ -414,9 +414,9 @@ public:
         int index);
 
     static int AddInvokeId(
-        CGXDLMSTranslatorStructure* xml, 
-        DLMS_COMMAND command, 
-        uint8_t type, 
+        CGXDLMSTranslatorStructure* xml,
+        DLMS_COMMAND command,
+        uint8_t type,
         uint32_t invokeId);
 
     /////////////////////////////////////////////////////////////////////////////

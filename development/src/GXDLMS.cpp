@@ -4368,11 +4368,11 @@ int CGXDLMS::GetPlcData(
     }
     unsigned char ch;
     int ret;
-    unsigned short pos;
+    unsigned long pos;
     int packetStartID = buff.GetPosition();
     // Find STX.
     unsigned char stx;
-    for (pos = (unsigned short)buff.GetPosition(); pos < buff.GetSize(); ++pos)
+    for (pos = buff.GetPosition(); pos < buff.GetSize(); ++pos)
     {
         if ((ret = buff.GetUInt8(&stx)) != 0)
         {
@@ -4757,12 +4757,13 @@ int CGXDLMS::CheckWrapperAddress(
     return DLMS_ERROR_CODE_OK;
 }
 
-unsigned short CGXDLMS::CountFCS16(CGXByteBuffer& buff, int index, int count)
+unsigned short CGXDLMS::CountFCS16(CGXByteBuffer& buff, unsigned long index, unsigned long count)
 {
     int ret;
     unsigned char ch;
     unsigned short fcs16 = 0xFFFF;
-    for (short pos = 0; pos < count; ++pos)
+    unsigned long pos;
+    for (pos = 0; pos < count; ++pos)
     {
         if ((ret = buff.GetUInt8(index + pos, &ch)) != 0)
         {
@@ -4776,10 +4777,11 @@ unsigned short CGXDLMS::CountFCS16(CGXByteBuffer& buff, int index, int count)
 }
 
 // Reserved for internal use.
-const uint32_t CRCPOLY = 0xD3B6BA00;
-uint32_t CGXDLMS::CountFCS24(unsigned char* buff, int index, int count)
+static const uint32_t CRCPOLY = 0xD3B6BA00;
+uint32_t CGXDLMS::CountFCS24(unsigned char* buff, unsigned long index, unsigned long count)
 {
-    unsigned char i, j;
+    unsigned long j;
+    unsigned char i;
     uint32_t crcreg = 0;
     for (j = 0; j < count; ++j)
     {
